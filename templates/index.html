@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>College Feedback Analysis</title>
+<link rel="stylesheet" href="style/style.css">
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='style/script.js') }}">
+</head>
+
+<body>
+
+<header>
+    <h1>College Feedback Analysis System</h1>
+    <p>Student Feedback Management </p>
+</header>
+
+<div class="container">
+
+    <div class="welcome">
+        <h2>Welcome to Feedback Analysis</h2>
+        <p>
+            Collect student feedback and analyze opinions about
+            teaching, infrastructure, facilities and college services
+            using text mining and sentiment analysis.
+        </p>
+    </div>
+
+    <div class="stats">
+
+        <div class="card">
+            <h3>Total Feedback</h3>
+            <h2 id="total">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Positive Feedback</h3>
+            <h2 id="positiveCount">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Negative Feedback</h3>
+            <h2 id="negativeCount">0</h2>
+        </div>
+
+        <div class="card">
+            <h3>Neutral Feedback</h3>
+            <h2 id="neutralCount">0</h2>
+        </div>
+
+    </div>
+
+    <div class="content">
+
+        <!-- Feedback Form -->
+        <div class="section">
+
+            <h2>Submit Your Feedback</h2>
+
+            <form id="feedbackForm">
+
+                <input type="text"
+                    id="student"
+                    placeholder="Enter Student Name"
+                    required>
+
+                <input type="text"
+                    id="department"
+                    placeholder="Enter Department"
+                    required>
+
+                <select id="category" required>
+                    <option value="">Select Feedback Category</option>
+                    <option>Teaching</option>
+                    <option>Infrastructure</option>
+                    <option>Library</option>
+                    <option>Hostel</option>
+                    <option>Other</option>
+                </select>
+
+                <textarea id="feedback"
+                    placeholder="Write your college feedback here..."
+                    required></textarea>
+
+                <button type="submit">Analyze & Submit</button>
+
+            </form>
+
+            <div id="result" class="result"></div>
+
+        </div>
+
+        <!-- Analysis -->
+        <div class="section">
+
+            <h2>Sentiment Analysis Dashboard</h2>
+
+            <div class="chart">
+
+                <div class="bar-row">
+                    <div class="bar-label">
+                        <span>Positive</span>
+                        <span id="positivePercent">0%</span>
+                    </div>
+                    <div class="track">
+                        <div class="fill green" id="positiveBar"
+                             style="width:0%"></div>
+                    </div>
+                </div>
+
+                <div class="bar-row">
+                    <div class="bar-label">
+                        <span>Negative</span>
+                        <span id="negativePercent">0%</span>
+                    </div>
+                    <div class="track">
+                        <div class="fill red" id="negativeBar"
+                             style="width:0%"></div>
+                    </div>
+                </div>
+
+                <div class="bar-row">
+                    <div class="bar-label">
+                        <span>Neutral</span>
+                        <span id="neutralPercent">0%</span>
+                    </div>
+                    <div class="track">
+                        <div class="fill yellow" id="neutralBar"
+                             style="width:0%"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <p style="margin-top:25px;color:#777">
+                The dashboard updates automatically when new
+                feedback is submitted.
+            </p>
+
+        </div>
+
+    </div>
+
+    <!-- Feedback History -->
+    <div class="history">
+
+        <h2>Feedback Analysis Report</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Department</th>
+                    <th>Category</th>
+                    <th>Feedback</th>
+                    <th>Sentiment</th>
+                </tr>
+            </thead>
+
+            <tbody id="feedbackTable">
+                <tr>
+                    <td colspan="5">No feedback submitted yet.</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<footer>
+    College Feedback Analysis Using Text Mining | Project
+</footer>
+
+<script>
+
+let records = [];
+
+const positiveWords = [
+    "good", "excellent", "great", "best", "amazing",
+    "helpful", "friendly", "beautiful", "clean",
+    "wonderful", "nice", "comfortable", "satisfied",
+    "improve", "supportive", "awesome", "love"
+];
+
+const negativeWords = [
+    "bad", "poor", "worst", "dirty", "problem",
+    "difficult", "boring", "slow", "unhappy",
+    "disappointed", "waste", "unfriendly",
+    "unsatisfied", "failure", "weak", "terrible"
+];
+
+// Basic keyword-based sentiment analysis
+function analyzeSentiment(text) {
+
+    const words = text.toLowerCase().match(/[a-z]+/g) || [];
+
+    let positive = 0;
+    let negative = 0;
+
+    words.forEach(word => {
+
+        if (positiveWords.includes(word)) {
+            positive++;
+        }
+
+        if (negativeWords.includes(word)) {
+            negative++;
+        }
+
+    });
+
+    if (positive > negative) return "Positive";
+
+    if (negative > positive) return "Negative";
+
+    return "Neutral";
+}
+
+// Submit feedback
+document.getElementById("feedbackForm")
+.addEventListener("submit", function(e) {
+
+    e.preventDefault();
+
+    const student = document.getElementById("student").value;
+    const department = document.getElementById("department").value;
+    const category = document.getElementById("category").value;
+    const feedback = document.getElementById("feedback").value;
+
+    const sentiment = analyzeSentiment(feedback);
+
+    records.push({
+        student,
+        department,
+        category,
+        feedback,
+        sentiment
+    });
+
+    const result = document.getElementById("result");
+
+    result.style.display = "block";
+    result.className = "result " + sentiment.toLowerCase();
+
+    result.innerHTML =
+        "<strong>Feedback Submitted Successfully!</strong><br>" +
+        "Sentiment Result: <strong>" + sentiment + "</strong>";
+
+    updateDashboard();
+
+    this.reset();
+
+});
+
+// Update dashboard
+function updateDashboard() {
+
+    let positive = 0;
+    let negative = 0;
+    let neutral = 0;
+
+    records.forEach(record => {
+
+        if (record.sentiment === "Positive") positive++;
+        if (record.sentiment === "Negative") negative++;
+        if (record.sentiment === "Neutral") neutral++;
+
+    });
+
+    const total = records.length;
+
+    document.getElementById("total").textContent = total;
+    document.getElementById("positiveCount").textContent = positive;
+    document.getElementById("negativeCount").textContent = negative;
+    document.getElementById("neutralCount").textContent = neutral;
+
+    const values = [
+        ["positive", positive],
+        ["negative", negative],
+        ["neutral", neutral]
+    ];
+
+    values.forEach(([name, count]) => {
+
+        const percent = total
+            ? Math.round((count / total) * 100)
+            : 0;
+
+        document.getElementById(name + "Percent").textContent =
+            percent + "%";
+
+        document.getElementById(name + "Bar").style.width =
+            percent + "%";
+
+    });
+
+    updateTable();
+
+}
+
+// Display feedback records
+function updateTable() {
+
+    const table = document.getElementById("feedbackTable");
+
+    table.innerHTML = "";
+
+    records.forEach(record => {
+
+        const row = document.createElement("tr");
+
+        [
+            record.student,
+            record.department,
+            record.category,
+            record.feedback,
+            record.sentiment
+        ].forEach(value => {
+
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+
+        });
+
+        table.appendChild(row);
+
+    });
+
+}
+
+</script>
+<style>
+    
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background: #f3f5fa;
+    color: #222;
+}
+
+header {
+    background: #252d62;
+    color: white;
+    padding: 22px 7%;
+}
+
+header h1 {
+    font-size: 25px;
+}
+
+header p {
+    margin-top: 7px;
+    color: #d7dcff;
+}
+
+.container {
+    width: 90%;
+    max-width: 1150px;
+    margin: 30px auto;
+}
+
+.welcome {
+    background: linear-gradient(120deg,#303b83,#6577dc);
+    color: white;
+    padding: 35px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+.welcome h2 {
+    font-size: 27px;
+    margin-bottom: 12px;
+}
+
+.welcome p {
+    line-height: 1.6;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    padding: 23px;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px #0000000c;
+}
+
+.card h3 {
+    color: #777;
+    font-size: 14px;
+}
+
+.card h2 {
+    margin-top: 12px;
+    font-size: 27px;
+    color: #303b83;
+}
+
+.content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+
+.section {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px #0000000c;
+}
+
+.section h2 {
+    margin-bottom: 20px;
+    color: #303b83;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    outline: none;
+}
+
+textarea {
+    height: 120px;
+    resize: vertical;
+}
+
+button {
+    background: #4659ba;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #303b83;
+}
+
+.result {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 7px;
+    display: none;
+    line-height: 1.6;
+}
+
+.positive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.negative {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.neutral {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.chart {
+    margin-top: 20px;
+}
+
+.bar-row {
+    margin: 17px 0;
+}
+
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+    font-size: 14px;
+}
+
+.track {
+    height: 12px;
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width .3s;
+}
+
+.green { background: #22c55e; }
+.red { background: #ef4444; }
+.yellow { background: #eab308; }
+
+.history {
+    margin-top: 25px;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    text-align: left;
+    padding: 13px;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background: #f3f5fa;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #777;
+}
+
+@media(max-width:750px) {
+    .stats {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+    .content {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media(max-width:450px) {
+    .stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+
+</body>
+</html>
